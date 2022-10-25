@@ -101,6 +101,50 @@
           "%S isn't supported"
           major-mode))))
 
+;;* `ace-link-combined'
+(defun ace-link-combined ()
+  (interactive)
+  (avy-with ace-link-combined
+    (setq avy-action #'ace-link--generic-action)
+    (avy-process
+     (append (ace-link--button-collect)
+             (mapcar #'cdr (ace-link--org-collect)))
+     (avy--style-fn avy-style))))
+
+(defun ace-link--generic-action (pos)
+  (save-excursion
+    (setf (point) pos)
+    (cond ((thing-at-point-url-at-point)
+           (browse-url-at-point))
+          (t
+           (ace-link--button-action pos)))))
+
+;;* `ace-link-button'
+;;;###autoload
+(defun ace-link-button ()
+  (interactive)
+  (avy-with ace-link-button
+    (setq avy-action #'ace-link--button-action)
+    (avy-process
+     (ace-link--button-collect)
+     (avy--style-fn avy-style))))
+
+(defun ace-link--button-action (pos)
+  (save-excursion
+    (setf (point) pos)
+    (let ((binding-at-point (key-binding [mouse-2] t t (point))))
+      (unless (eq binding-at-point (key-binding [mouse-2] t t))
+        (call-interactively binding-at-point)))))
+
+(defun ace-link--button-collect ()
+  (save-excursion
+    (setf (point) (window-start))
+    (let ((acc))
+      (while (and (forward-button 1 nil nil t)
+                  (< (point) (window-end)))
+        (push (point) acc))
+      acc)))
+
 ;;* `ace-link-info'
 ;;;###autoload
 (defun ace-link-info ()
